@@ -14,7 +14,7 @@ export const NextButton: React.FC<NextButtonProps> = ({
 }) => {
   return (
     <TouchableOpacity 
-      className={`bg-blue-500 px-8 py-3 rounded-lg ${className}`}
+      className={`bg-[#4361EE] px-8 py-3 rounded-lg ${className}`}
       onPress={onPress}
     >
       <Text className="text-white text-lg font-bold text-center">

@@ -1,6 +1,4 @@
-import GameScreen from './screens/GameScreen';
+import WelcomeScreen from './screens/WelcomeScreen';
 
-export default function App() {
-  return <GameScreen />;
-}
+export default WelcomeScreen;
 
