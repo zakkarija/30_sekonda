@@ -1,2 +1,2 @@
-import GameScreen from './screens/GameScreen';
+import GameScreen from '../src/screens/GameScreen';
 export default GameScreen; 

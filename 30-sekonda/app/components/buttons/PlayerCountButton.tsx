@@ -24,3 +24,5 @@ export const PlayerCountButton: React.FC<PlayerCountButtonProps> = ({
     </TouchableOpacity>
   );
 }; 
+
+export default PlayerCountButton;

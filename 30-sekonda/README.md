@@ -1,3 +1,71 @@
+# 30 Sekonda
+
+A team-based word guessing game built with React Native and Expo.
+
+## Project Structure
+
+This project follows Expo Router best practices with a clean separation of concerns:
+
+```
+/30-sekonda
+├── /app               # Expo Router routes
+│   ├── _layout.tsx    # Stack navigation layout
+│   ├── index.tsx      # Welcome screen route
+│   ├── setup.tsx      # Setup screen route
+│   └── game.tsx       # Game screen route
+│
+├── /src               # Application source code
+│   ├── /assets        # Static assets
+│   │   └── /wordlists # Word lists for the game
+│   │
+│   ├── /components    # Reusable UI components
+│   │   ├── /buttons   # Button components
+│   │   ├── /modals    # Modal components
+│   │   └── index.ts   # Barrel exports for components
+│   │
+│   ├── /hooks         # Custom React hooks
+│   ├── /screens       # Screen components
+│   ├── /styles        # Global styles and theme
+│   ├── /types         # TypeScript type definitions
+│   ├── /utils         # Utility functions
+│   └── /constants     # App constants
+│
+└── /assets            # Expo assets (images, fonts)
+```
+
+## Routing
+
+The game uses Expo Router for navigation:
+
+- `/` - Welcome screen with game introduction
+- `/setup` - Player setup screen for entering names and teams
+- `/game` - Main game screen
+
+## Component Structure
+
+Components are organized by their functionality:
+
+- **Basic Components**: GameTimer, WordList, PlayerTurnIndicator, etc.
+- **Button Components**: BackButton, etc.
+- **Modal Components**: ResultModal, GameOverModal, etc.
+
+## Styling
+
+The app uses a centralized theming system in `src/styles/theme.ts` that includes:
+
+- Color palette
+- Spacing constants
+- Border radius values
+- Typography settings
+- Shadow styles
+
+## Game Rules
+
+1. Players are divided into Red and Blue teams
+2. Each player takes turns trying to guess 5 words within 30 seconds
+3. Successfully guessing all words earns a point for the player's team
+4. First team to reach the winning score (more than half of total rounds) wins
+
 # Welcome to your Expo app 👋
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).

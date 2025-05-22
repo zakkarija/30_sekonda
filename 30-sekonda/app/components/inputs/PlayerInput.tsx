@@ -33,3 +33,5 @@ export const PlayerInput: React.FC<PlayerInputProps> = ({ player, onUpdate }) =>
     </View>
   );
 }; 
+
+export default PlayerInput;

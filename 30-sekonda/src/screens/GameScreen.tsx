@@ -6,30 +6,22 @@ import {
   SafeAreaView
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { englishWords } from '../../assets/wordlists/english';
-import { malteseWords } from '../../assets/wordlists/maltese';
+import { englishWords } from '../assets/wordlists/english';
+import { malteseWords } from '../assets/wordlists/maltese';
+import { colors, spacing } from '../styles/theme';
 
-// Import our components
-import { GameTimer } from '../components/GameTimer';
-import { WordList } from '../components/WordList';
-import { PlayerTurnIndicator } from '../components/PlayerTurnIndicator';
-import { ScoreDisplay } from '../components/ScoreDisplay';
-import { RoundInfoDisplay } from '../components/RoundInfoDisplay';
-import { BackButton } from '../components/buttons/BackButton';
-import { ResultModal } from '../components/modals/ResultModal';
-import { GameOverModal } from '../components/modals/GameOverModal';
-
-interface Word {
-  id: number;
-  text: string;
-  checked: boolean;
-}
-
-interface Player {
-  id: number;
-  name: string;
-  isRedTeam: boolean;
-}
+// Import components using barrel import
+import {
+  GameTimer,
+  WordList,
+  PlayerTurnIndicator,
+  ScoreDisplay,
+  RoundInfoDisplay,
+  BackButton,
+  ResultModal,
+  GameOverModal
+} from '../components';
+import { Player, Word } from '../types';
 
 export default function GameScreen() {
   const params = useLocalSearchParams();
@@ -247,15 +239,15 @@ export default function GameScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#1A1A2E',
+    backgroundColor: colors.background.primary,
   },
   container: {
     flex: 1,
-    padding: 24,
+    padding: spacing.lg,
     paddingTop: 50,
   },
   errorText: {
-    color: '#F8F9FA',
+    color: colors.text.primary,
     fontSize: 18,
     textAlign: 'center',
     marginTop: 100,
@@ -265,7 +257,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'stretch',
     width: '100%',
-    marginBottom: 15,
+    marginBottom: spacing.md,
     minHeight: 90,
   },
 }); 

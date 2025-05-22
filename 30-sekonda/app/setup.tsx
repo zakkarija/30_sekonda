@@ -1,2 +1,2 @@
-import SetupScreen from './screens/SetupScreen';
+import SetupScreen from '../src/screens/SetupScreen';
 export default SetupScreen; 
