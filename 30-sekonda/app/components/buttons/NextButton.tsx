@@ -23,3 +23,5 @@ export const NextButton: React.FC<NextButtonProps> = ({
     </TouchableOpacity>
   );
 }; 
+
+export default NextButton;

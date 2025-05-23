@@ -18,7 +18,7 @@ export const malteseWords: string[] = [
   'Siġra',     // Tree
   'Ktieb',     // Book
   'Kompjuter', // Computer
-  'Telefon',    // Phone 
+  'Telefon',    // Phone
   'serjeta',
   'bonġu',
   'merħba',
