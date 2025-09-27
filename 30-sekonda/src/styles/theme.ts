@@ -11,6 +11,8 @@ export const colors = {
   team: {
     red: '#FF4D6D',
     blue: '#4361EE',
+    green: '#06D6A0',
+    yellow: '#FFD166',
   },
   
   // Feedback colors

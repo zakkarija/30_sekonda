@@ -1,17 +1,30 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { TeamColor } from '../types';
+import { colors } from '../styles/theme';
 
 interface ScoreDisplayProps {
-  redScore: number;
-  blueScore: number;
+  teamScores: Record<TeamColor, number>;
+  activeTeams: TeamColor[];
 }
 
-export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({ redScore, blueScore }) => {
+export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({ teamScores, activeTeams }) => {
+  const getTeamName = (team: TeamColor) => {
+    return team.charAt(0).toUpperCase() + team.slice(1);
+  };
+
   return (
     <View style={styles.scoreContainer}>
-      <Text style={styles.scoreTextRed}>Red: {redScore}</Text>
-      <Text style={styles.scoreTextSeparator}>-</Text>
-      <Text style={styles.scoreTextBlue}>Blue: {blueScore}</Text>
+      {activeTeams.map((team, index) => (
+        <React.Fragment key={team}>
+          <Text style={[styles.scoreText, { color: colors.team[team] }]}>
+            {getTeamName(team)}: {teamScores[team]}
+          </Text>
+          {index < activeTeams.length - 1 && (
+            <Text style={styles.scoreTextSeparator}>•</Text>
+          )}
+        </React.Fragment>
+      ))}
     </View>
   );
 };
@@ -22,21 +35,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
+    flexWrap: 'wrap',
   },
-  scoreTextRed: {
-    fontSize: 20,
+  scoreText: {
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#FF4D6D', // Red team color
-  },
-  scoreTextBlue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#4361EE', // Blue team color
+    marginHorizontal: 8,
   },
   scoreTextSeparator: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#F8F9FA', // Light color for separator
-    marginHorizontal: 10,
+    marginHorizontal: 4,
   },
 }); 

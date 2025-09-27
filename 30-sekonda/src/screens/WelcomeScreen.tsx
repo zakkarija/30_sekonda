@@ -1,10 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
 export default function WelcomeScreen() {
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+      <View style={[styles.container, { paddingTop: insets.top + 10 }]}>
       {/* Title section */}
       <View style={styles.titleContainer}>
         <Text style={styles.titlePrimary}>30</Text>
@@ -32,14 +36,18 @@ export default function WelcomeScreen() {
       >
         <Text style={styles.buttonText}>PLAY NOW</Text>
       </TouchableOpacity>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: '#1A1A2E',
+  },
+  container: {
+    flex: 1,
     padding: 24,
     alignItems: 'center',
     justifyContent: 'center',

@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  SafeAreaView
+  StyleSheet
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { englishWords } from '../assets/wordlists/english';
 import { malteseWords } from '../assets/wordlists/maltese';
@@ -21,20 +21,25 @@ import {
   ResultModal,
   GameOverModal
 } from '../components';
-import { Player, Word } from '../types';
+import { Player, Word, TeamColor } from '../types';
 
 export default function GameScreen() {
   const params = useLocalSearchParams();
+  const insets = useSafeAreaInsets();
   
   const [timeLeft, setTimeLeft] = useState(30);
   const [words, setWords] = useState<Word[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [redTeamScore, setRedTeamScore] = useState(0);
-  const [blueTeamScore, setBlueTeamScore] = useState(0);
+  const [teamScores, setTeamScores] = useState<Record<TeamColor, number>>({
+    red: 0,
+    blue: 0,
+    green: 0,
+    yellow: 0,
+  });
   const [currentRound, setCurrentRound] = useState(1);
   const [gameOver, setGameOver] = useState(false);
-  const [winningTeam, setWinningTeam] = useState<'Red' | 'Blue' | null>(null);
+  const [winningTeam, setWinningTeam] = useState<TeamColor | null>(null);
   
   // Get players from params
   const [players, setPlayers] = useState<Player[]>(() => {
@@ -50,8 +55,8 @@ export default function GameScreen() {
   useEffect(() => {
     if (players.length === 0) {
       setPlayers([
-        { id: 1, name: 'Player 1', isRedTeam: true },
-        { id: 2, name: 'Player 2', isRedTeam: false },
+        { id: 1, name: 'Player 1', isRedTeam: true, team: 'red' },
+        { id: 2, name: 'Player 2', isRedTeam: false, team: 'blue' },
       ]);
     }
   }, [players.length]);
@@ -66,19 +71,15 @@ export default function GameScreen() {
   // Calculate winning score (more than half of total rounds)
   const winningScore = Math.ceil(totalRounds / 2);
 
-  // Check if a team has won
-  const checkWinner = useCallback(() => {
-    if (redTeamScore >= winningScore) {
-      setWinningTeam('Red');
-      setGameOver(true);
-      return true;
-    } else if (blueTeamScore >= winningScore) {
-      setWinningTeam('Blue');
-      setGameOver(true);
-      return true;
-    }
-    return false;
-  }, [redTeamScore, blueTeamScore, winningScore]);
+  // Get active teams (teams with players)
+  const activeTeams = useCallback(() => {
+    const teams = new Set<TeamColor>();
+    players.forEach(player => {
+      if (player.team) teams.add(player.team);
+    });
+    return Array.from(teams);
+  }, [players]);
+
 
   // Initialize words
   const getNewWords = useCallback(() => {
@@ -145,24 +146,20 @@ export default function GameScreen() {
   // Handle next round
   const handleNext = () => {
     if (isSuccess) {
-      let newRedScore = redTeamScore;
-      let newBlueScore = blueTeamScore;
-      
-      // Update scores
-      if (currentPlayer.isRedTeam) {
-        newRedScore = redTeamScore + 1;
-        setRedTeamScore(newRedScore);
-      } else {
-        newBlueScore = blueTeamScore + 1;
-        setBlueTeamScore(newBlueScore);
-      }
-      
+      const playerTeam = currentPlayer.team || (currentPlayer.isRedTeam ? 'red' : 'blue');
+      const newScores = { ...teamScores };
+      newScores[playerTeam] = teamScores[playerTeam] + 1;
+      setTeamScores(newScores);
+
       // Check if a team has won after updating scores
-      if (newRedScore >= winningScore || newBlueScore >= winningScore) {
-        setWinningTeam(newRedScore >= winningScore ? 'Red' : 'Blue');
-        setGameOver(true);
-        setShowModal(false); // Hide the round result modal
-        return; // Don't proceed to next player
+      const teams = activeTeams();
+      for (const team of teams) {
+        if (newScores[team] >= winningScore) {
+          setWinningTeam(team);
+          setGameOver(true);
+          setShowModal(false); // Hide the round result modal
+          return; // Don't proceed to next player
+        }
       }
     }
     
@@ -181,8 +178,8 @@ export default function GameScreen() {
 
   if (!currentPlayer) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+        <View style={[styles.container, { paddingTop: insets.top + 10 }]}>
           <Text style={styles.errorText}>Loading players...</Text>
         </View>
       </SafeAreaView>
@@ -190,13 +187,13 @@ export default function GameScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+      <View style={[styles.container, { paddingTop: insets.top + 10 }]}>
         {/* Custom Back Button */}
         <BackButton onPress={() => router.back()} />
 
         {/* Score Display */}
-        <ScoreDisplay redScore={redTeamScore} blueScore={blueTeamScore} />
+        <ScoreDisplay teamScores={teamScores} activeTeams={activeTeams()} />
         
         {/* Round Indicator */}
         <RoundInfoDisplay currentRound={currentRound} totalRounds={totalRounds} />
@@ -204,9 +201,9 @@ export default function GameScreen() {
         {/* Top Info Row: Player Turn and Timer */}
         <View style={styles.topInfoRow}>
           {/* Player turn indicator */}
-          <PlayerTurnIndicator 
+          <PlayerTurnIndicator
             playerName={currentPlayer.name}
-            isRedTeam={currentPlayer.isRedTeam}
+            team={currentPlayer.team || (currentPlayer.isRedTeam ? 'red' : 'blue')}
           />
           
           {/* Timer section */}
@@ -227,8 +224,8 @@ export default function GameScreen() {
         <GameOverModal
           visible={gameOver}
           winningTeam={winningTeam}
-          redScore={redTeamScore}
-          blueScore={blueTeamScore}
+          teamScores={teamScores}
+          activeTeams={activeTeams()}
           onReturn={returnToSetup}
         />
       </View>

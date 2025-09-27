@@ -1,34 +1,37 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, 
-  Text, 
-  ScrollView, 
-  TouchableOpacity, 
-  StyleSheet, 
-  TextInput, 
-  Switch, 
-  KeyboardAvoidingView, 
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  TextInput,
+  KeyboardAvoidingView,
   Platform,
   findNodeHandle,
-  UIManager,
-  SafeAreaView
+  UIManager
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Player } from '../types';
+import { Player, TeamColor } from '../types';
 import { MIN_PLAYERS, MAX_PLAYERS, ROUND_OPTIONS } from '../constants/game';
 import { colors, fontSize, borderRadius, spacing } from '../styles/theme';
+import { TeamColorButton, HelpModal } from '../components';
 
 interface PlayerInputRef {
   [key: number]: TextInput | null;
 }
 
 export default function SetupScreen() {
+  const insets = useSafeAreaInsets();
   const [language, setLanguage] = useState('English');
   const [numPlayers, setNumPlayers] = useState(MIN_PLAYERS);
   const [numRounds, setNumRounds] = useState(ROUND_OPTIONS[0]);
+  const teams: TeamColor[] = ['red', 'blue', 'green', 'yellow'];
+  const [showHelpModal, setShowHelpModal] = useState(false);
   const [players, setPlayers] = useState<Player[]>([
-    { id: 1, name: '', isRedTeam: true },
-    { id: 2, name: '', isRedTeam: false },
+    { id: 1, name: '', isRedTeam: true, team: 'red' },
+    { id: 2, name: '', isRedTeam: false, team: 'blue' },
   ]);
   const [canStart, setCanStart] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -41,19 +44,41 @@ export default function SetupScreen() {
     setCanStart(validPlayerNames && validPlayerCount);
   }, [players]);
 
-  const updatePlayer = (id: number, field: keyof Player, value: string | boolean) => {
-    setPlayers(players.map(player => 
-      player.id === id ? { ...player, [field]: value } : player
-    ));
+  const updatePlayer = (id: number, field: keyof Player, value: string | boolean | TeamColor) => {
+    setPlayers(players.map(player => {
+      if (player.id === id) {
+        const updatedPlayer = { ...player, [field]: value };
+        // Sync isRedTeam with team color for backwards compatibility
+        if (field === 'team') {
+          updatedPlayer.isRedTeam = value === 'red';
+        }
+        return updatedPlayer;
+      }
+      return player;
+    }));
+  };
+
+  const togglePlayerTeam = (id: number) => {
+    const player = players.find(p => p.id === id);
+    if (!player) return;
+
+    const currentTeamIndex = teams.indexOf(player.team || 'red');
+    const nextTeamIndex = (currentTeamIndex + 1) % teams.length;
+    const nextTeam = teams[nextTeamIndex];
+
+    updatePlayer(id, 'team', nextTeam);
   };
 
   const addPlayer = () => {
     if (numPlayers < MAX_PLAYERS) {
       setNumPlayers((prev: number) => prev + 1);
-      setPlayers([...players, { 
-        id: players.length + 1, 
-        name: '', 
-        isRedTeam: players.length % 2 === 0 
+      // Alternate between red and blue for new players by default
+      const newTeam = players.length % 2 === 0 ? 'red' : 'blue';
+      setPlayers([...players, {
+        id: players.length + 1,
+        name: '',
+        isRedTeam: newTeam === 'red',
+        team: newTeam
       }]);
     }
   };
@@ -100,16 +125,16 @@ export default function SetupScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <KeyboardAvoidingView 
         style={styles.keyboardAvoidingContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
-        <ScrollView 
+        <ScrollView
           ref={scrollViewRef}
           style={styles.container}
-          contentContainerStyle={styles.scrollContentContainer}
+          contentContainerStyle={[styles.scrollContentContainer, { paddingTop: insets.top + 10 }]}
           keyboardShouldPersistTaps="handled"
         >
           {/* App Title */}
@@ -166,6 +191,21 @@ export default function SetupScreen() {
           {/* Player Names and Teams */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Players</Text>
+
+            {/* Column Headers */}
+            <View style={styles.columnHeaders}>
+              <Text style={styles.columnHeaderText}>Player</Text>
+              <View style={styles.teamHeaderContainer}>
+                <Text style={styles.columnHeaderText}>Team</Text>
+                <TouchableOpacity
+                  style={styles.helpButton}
+                  onPress={() => setShowHelpModal(true)}
+                >
+                  <Text style={styles.helpButtonText}>?</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
             {players.map((player) => (
               <View key={player.id} style={styles.playerInput}>
                 <TextInput
@@ -181,18 +221,10 @@ export default function SetupScreen() {
                   onChangeText={(text) => updatePlayer(player.id, 'name', text)}
                   onFocus={() => handleInputFocus(player.id)}
                 />
-                <View style={styles.teamToggle}>
-                  <Text style={styles.teamLabel}>
-                    {player.isRedTeam ? '🔴' : '🔵'}
-                  </Text>
-                  <Switch
-                    value={player.isRedTeam}
-                    onValueChange={(value) => updatePlayer(player.id, 'isRedTeam', value)}
-                    trackColor={{ false: colors.team.blue, true: colors.team.red }}
-                    thumbColor="#f4f3f4"
-                    ios_backgroundColor="#3e3e3e"
-                  />
-                </View>
+                <TeamColorButton
+                  team={player.team || 'red'}
+                  onPress={() => togglePlayerTeam(player.id)}
+                />
               </View>
             ))}
           </View>
@@ -227,6 +259,12 @@ export default function SetupScreen() {
               Start Game
             </Text>
           </TouchableOpacity>
+
+          {/* Help Modal */}
+          <HelpModal
+            visible={showHelpModal}
+            onClose={() => setShowHelpModal(false)}
+          />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -246,7 +284,7 @@ const styles = StyleSheet.create({
   },
   scrollContentContainer: {
     padding: spacing.lg,
-    paddingBottom: 100,
+    paddingBottom: spacing.xxl,
   },
   appTitle: {
     fontSize: 42,
@@ -273,6 +311,36 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: spacing.md,
     color: colors.text.primary,
+  },
+  teamHeaderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  helpButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.feedback.info,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  helpButtonText: {
+    color: 'white',
+    fontSize: fontSize.sm,
+    fontWeight: 'bold',
+  },
+  columnHeaders: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.sm,
+  },
+  columnHeaderText: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
+    color: colors.text.secondary,
   },
   languageButtons: {
     flexDirection: 'row',
@@ -327,6 +395,7 @@ const styles = StyleSheet.create({
   playerInput: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: spacing.md,
   },
   input: {
@@ -334,22 +403,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.secondary,
     borderRadius: borderRadius.md,
     padding: spacing.md,
-    marginRight: spacing.md,
+    marginRight: spacing.lg,
     color: colors.text.primary,
     fontSize: fontSize.md,
     height: 50,
-  },
-  teamToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background.secondary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
-  },
-  teamLabel: {
-    marginRight: spacing.sm,
-    color: colors.text.primary,
   },
   roundsContainer: {
     flexDirection: 'row',
@@ -374,7 +431,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     borderRadius: borderRadius.md,
-    marginBottom: 40,
+    marginTop: spacing.lg,
   },
   disabledStartButton: {
     backgroundColor: '#6C757D',

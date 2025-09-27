@@ -1,25 +1,41 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { TeamColor } from '../types';
+import { colors } from '../styles/theme';
 
 interface PlayerTurnIndicatorProps {
   playerName: string;
-  isRedTeam: boolean;
+  team: TeamColor;
 }
 
-export const PlayerTurnIndicator: React.FC<PlayerTurnIndicatorProps> = ({ 
-  playerName, 
-  isRedTeam 
+export const PlayerTurnIndicator: React.FC<PlayerTurnIndicatorProps> = ({
+  playerName,
+  team
 }) => {
+  const getTeamEmoji = (team: TeamColor) => {
+    switch (team) {
+      case 'red': return '🔴';
+      case 'blue': return '🔵';
+      case 'green': return '🟢';
+      case 'yellow': return '🟡';
+      default: return '⚪';
+    }
+  };
+
+  const getTeamName = (team: TeamColor) => {
+    return team.charAt(0).toUpperCase() + team.slice(1);
+  };
+
   return (
     <View style={[
-      styles.playerTurnContainer, 
-      { backgroundColor: isRedTeam ? '#FF4D6D' : '#4361EE' }
+      styles.playerTurnContainer,
+      { backgroundColor: colors.team[team] }
     ]}>
       <Text style={styles.playerTurnLabel} numberOfLines={1} ellipsizeMode="tail">
-        {playerName}'s Turn
+        {playerName}&apos;s Turn
       </Text>
       <Text style={styles.teamIndicator}>
-        {isRedTeam ? '🔴 Red Team' : '🔵 Blue Team'}
+        {getTeamEmoji(team)} {getTeamName(team)} Team
       </Text>
     </View>
   );

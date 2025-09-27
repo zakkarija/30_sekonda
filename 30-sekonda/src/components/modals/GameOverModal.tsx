@@ -1,15 +1,34 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
-import { GameOverModalProps } from '../../types';
+import { GameOverModalProps, TeamColor } from '../../types';
 import { colors, fontSize, borderRadius, spacing } from '../../styles/theme';
 
-export const GameOverModal: React.FC<GameOverModalProps> = ({ 
-  visible, 
-  winningTeam, 
-  redScore, 
-  blueScore, 
-  onReturn 
+export const GameOverModal: React.FC<GameOverModalProps> = ({
+  visible,
+  winningTeam,
+  teamScores,
+  activeTeams,
+  onReturn
 }) => {
+  const getTeamEmoji = (team: TeamColor) => {
+    switch (team) {
+      case 'red': return '🔴';
+      case 'blue': return '🔵';
+      case 'green': return '🟢';
+      case 'yellow': return '🟡';
+      default: return '⚪';
+    }
+  };
+
+  const getTeamName = (team: TeamColor) => {
+    return team.charAt(0).toUpperCase() + team.slice(1);
+  };
+
+  const getScoreDisplay = () => {
+    return activeTeams
+      .map(team => `${getTeamName(team)} ${teamScores[team]}`)
+      .join(' - ');
+  };
   return (
     <Modal
       transparent={true}
@@ -19,10 +38,10 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>
-            {winningTeam === 'Red' ? '🔴 Red Team Wins! 🔴' : '🔵 Blue Team Wins! 🔵'}
+            {winningTeam && `${getTeamEmoji(winningTeam)} ${getTeamName(winningTeam)} Team Wins! ${getTeamEmoji(winningTeam)}`}
           </Text>
           <Text style={styles.modalMessage}>
-            Final Score: Red {redScore} - Blue {blueScore}
+            Final Score: {getScoreDisplay()}
           </Text>
           <TouchableOpacity
             style={styles.homeButton}

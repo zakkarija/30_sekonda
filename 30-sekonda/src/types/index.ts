@@ -1,7 +1,10 @@
+export type TeamColor = 'red' | 'blue' | 'green' | 'yellow';
+
 export interface Player {
   id: number;
   name: string;
-  isRedTeam: boolean;
+  isRedTeam: boolean; // Keep for backwards compatibility
+  team?: TeamColor; // New field for multi-team support
 }
 
 export interface Word {
@@ -18,8 +21,8 @@ export interface GameModalProps {
 
 export interface GameOverModalProps {
   visible: boolean;
-  winningTeam: 'Red' | 'Blue' | null;
-  redScore: number;
-  blueScore: number;
+  winningTeam: TeamColor | null;
+  teamScores: Record<TeamColor, number>;
+  activeTeams: TeamColor[];
   onReturn: () => void;
 } 
