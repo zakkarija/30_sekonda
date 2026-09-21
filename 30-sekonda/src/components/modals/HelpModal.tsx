@@ -44,12 +44,14 @@ export const HelpModal: React.FC<HelpModalProps> = ({ visible, onClose }) => {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>🎮 How to Play</Text>
               <Text style={styles.text}>
-                1. One player from the active team describes 5 words{'\n'}
-                2. They have 30 seconds to get their team to guess all words{'\n'}
-                3. The describer cannot say the actual word or any part of it{'\n'}
-                4. Teammates shout out guesses{'\n'}
-                5. Tap words when correctly guessed{'\n'}
-                6. If all 5 words are guessed, the team scores a point
+                1. The app tells you whose turn it is. Pass them the phone{'\n'}
+                2. That player taps Start when they are ready — only then does the 30-second timer begin{'\n'}
+                3. They describe the 5 words on screen to their teammates{'\n'}
+                4. The describer cannot say the actual word or any part of it{'\n'}
+                5. Teammates shout out guesses{'\n'}
+                6. Tap each word on the phone as soon as it is guessed{'\n'}
+                7. If all 5 words are guessed before time runs out, the team scores a point{'\n'}
+                8. After each turn you will see the score and who is up next
               </Text>
             </View>
 

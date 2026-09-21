@@ -13,9 +13,29 @@ export interface Word {
   checked: boolean;
 }
 
+export interface TurnReadyModalProps {
+  visible: boolean;
+  playerName: string;
+  team: TeamColor;
+  currentRound: number;
+  totalRounds: number;
+  teamScores: Record<TeamColor, number>;
+  activeTeams: TeamColor[];
+  isFirstTurn: boolean;
+  onStart: () => void;
+}
+
 export interface GameModalProps {
   visible: boolean;
   isSuccess: boolean;
+  playerName: string;
+  team: TeamColor;
+  guessedCount: number;
+  totalWords: number;
+  teamScores: Record<TeamColor, number>;
+  activeTeams: TeamColor[];
+  nextPlayerName: string | null;
+  nextPlayerTeam: TeamColor | null;
   onNext: () => void;
 }
 
@@ -25,4 +45,4 @@ export interface GameOverModalProps {
   teamScores: Record<TeamColor, number>;
   activeTeams: TeamColor[];
   onReturn: () => void;
-} 
+}

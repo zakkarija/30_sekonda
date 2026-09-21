@@ -12,4 +12,5 @@ export { default as TeamColorButton } from './buttons/TeamColorButton';
 // Modal components
 export { ResultModal } from './modals/ResultModal';
 export { GameOverModal } from './modals/GameOverModal';
-export { HelpModal } from './modals/HelpModal'; 
+export { HelpModal } from './modals/HelpModal';
+export { TurnReadyModal } from './modals/TurnReadyModal';

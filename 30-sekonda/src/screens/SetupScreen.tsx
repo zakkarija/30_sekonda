@@ -104,6 +104,10 @@ export default function SetupScreen() {
   };
 
   const handleInputFocus = (playerId: number) => {
+    // findNodeHandle/UIManager are not supported on web; the browser
+    // scrolls focused inputs into view on its own.
+    if (Platform.OS === 'web') return;
+
     const textInputNode = playerInputRefs.current[playerId];
     const scrollViewNode = scrollViewRef.current;
 

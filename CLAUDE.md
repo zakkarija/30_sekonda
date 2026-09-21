@@ -73,9 +73,10 @@ eas submit --platform android           # Submit to Play Store
     │   │   │   ├── BackButton.tsx
     │   │   │   └── TeamColorButton.tsx
     │   │   ├── /modals/
-    │   │   │   ├── ResultModal.tsx       # Round result display
-    │   │   │   ├── GameOverModal.tsx     # Game completion display
-    │   │   │   └── HelpModal.tsx         # Game instructions
+    │   │   │   ├── TurnReadyModal.tsx    # "Pass the phone to X" screen before each turn
+    │   │   │   ├── ResultModal.tsx       # Turn result: words guessed, score, who's next
+    │   │   │   ├── GameOverModal.tsx     # Winner or draw with final score
+    │   │   │   └── HelpModal.tsx         # Game instructions (Welcome + Setup screens)
     │   │   ├── GameTimer.tsx             # 30-second countdown timer
     │   │   ├── WordList.tsx              # Word display with checkboxes
     │   │   ├── PlayerTurnIndicator.tsx   # Current player display
@@ -154,13 +155,21 @@ eas submit --platform android           # Submit to Play Store
          │           - Choose rounds (3, 5, or 7)
          v
 ┌─────────────────┐
-│   Game Screen   │  Main game logic
-│   (app/game)    │  - 30-second timer per turn
-└─────────────────┘  - 5 words to guess per round
-                     - Automatic player rotation
-                     - Real-time score tracking
-                     - Game ends when team reaches winning score
+│   Game Screen   │  Main game logic, one turn per player per round
+│   (app/game)    │  Each turn has three phases (see below)
+└─────────────────┘  - Game ends early when a team reaches the winning score
+                     - Otherwise ends after the last round: highest score wins, equal = draw
 ```
+
+**Turn phases** (`turnPhase` state in `GameScreen.tsx`):
+
+| Phase     | What the player sees                                             | Timer   |
+|-----------|------------------------------------------------------------------|---------|
+| `ready`   | `TurnReadyModal`: "Pass the phone to X", round, scores, rules, Start button. Word list is hidden so nobody can peek. | stopped |
+| `playing` | Timer, 5 word cards, "Tap a word when your team guesses it · n / 5" hint | running |
+| `result`  | `ResultModal`: words guessed, point awarded or not, score, "Next up: Y", "Pass to Y" button | stopped |
+
+The timer only runs in `playing`, so finishing early can never be overwritten by a later "Time's up".
 
 ### State Management Pattern
 
@@ -172,8 +181,12 @@ eas submit --platform android           # Submit to Play Store
 **Data Flow:**
 1. SetupScreen collects player data
 2. Data passed to GameScreen via `router.push()` with params
-3. GameScreen manages: scores, current player, words, timer, modals
-4. State resets on navigation back to setup
+3. GameScreen manages: scores, current player, words, timer, turn phase, modals
+4. `turnNumber` increments on every turn and drives the reset effect (new words, timer back to 30, phase back to `ready`)
+5. `turnOutcome` (a `useMemo`) pre-computes what pressing "Next" will do so the result modal can name the next player or say the game is over
+6. State resets on navigation back to setup
+
+**Web caveat:** `findNodeHandle`/`UIManager.measureLayout` throw on React Native Web. `SetupScreen.handleInputFocus` skips them when `Platform.OS === 'web'`.
 
 ### Component Organization
 
@@ -381,6 +394,13 @@ const styles = StyleSheet.create({});
   - Android emulator
   - Expo Go on physical devices
   - Web browser
+
+### Running on web in a sandbox / CI
+The Expo CLI phones home to validate dependency versions on start. Without network access use:
+```bash
+cd 30-sekonda && CI=1 BROWSER=none EXPO_OFFLINE=1 npx expo start --web --offline --port 8081
+```
+`CI=1` disables file watching, so restart the server after code changes. The web build can then be driven with Playwright (Chromium at `/opt/pw-browsers/chromium`) to walk the full game flow. Modals use a fade animation, so wait ~600ms before clicking buttons inside them.
 
 ### Recommended Testing Approach
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,8 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router, useLocalSearchParams } from 'expo-router';
 import { englishWords } from '../assets/wordlists/english';
 import { malteseWords } from '../assets/wordlists/maltese';
-import { colors, spacing } from '../styles/theme';
+import { colors, spacing, fontSize } from '../styles/theme';
+import { DEFAULT_TIMER_SECONDS, WORDS_PER_ROUND, ROUND_OPTIONS } from '../constants/game';
 
 // Import components using barrel import
 import {
@@ -19,17 +20,29 @@ import {
   RoundInfoDisplay,
   BackButton,
   ResultModal,
-  GameOverModal
+  GameOverModal,
+  TurnReadyModal
 } from '../components';
 import { Player, Word, TeamColor } from '../types';
+
+/**
+ * A turn moves through three phases:
+ *  - ready:   "Pass the phone to X" screen. Timer is NOT running.
+ *  - playing: Timer counts down, words can be tapped.
+ *  - result:  Turn summary. Timer is stopped.
+ */
+type TurnPhase = 'ready' | 'playing' | 'result';
+
+const getPlayerTeam = (player: Player): TeamColor =>
+  player.team || (player.isRedTeam ? 'red' : 'blue');
 
 export default function GameScreen() {
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
-  
-  const [timeLeft, setTimeLeft] = useState(30);
+
+  const [timeLeft, setTimeLeft] = useState(DEFAULT_TIMER_SECONDS);
   const [words, setWords] = useState<Word[]>([]);
-  const [showModal, setShowModal] = useState(false);
+  const [turnPhase, setTurnPhase] = useState<TurnPhase>('ready');
   const [isSuccess, setIsSuccess] = useState(false);
   const [teamScores, setTeamScores] = useState<Record<TeamColor, number>>({
     red: 0,
@@ -38,9 +51,10 @@ export default function GameScreen() {
     yellow: 0,
   });
   const [currentRound, setCurrentRound] = useState(1);
+  const [turnNumber, setTurnNumber] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [winningTeam, setWinningTeam] = useState<TeamColor | null>(null);
-  
+
   // Get players from params
   const [players, setPlayers] = useState<Player[]>(() => {
     try {
@@ -50,7 +64,7 @@ export default function GameScreen() {
       return [];
     }
   });
-  
+
   // Use default players if none were passed or parsing failed
   useEffect(() => {
     if (players.length === 0) {
@@ -63,20 +77,18 @@ export default function GameScreen() {
 
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const currentPlayer = players[currentPlayerIndex];
-  
+
   // Parse the number of rounds (if passed)
-  const totalRounds = params.rounds ? parseInt(params.rounds as string) : 3;
+  const totalRounds = params.rounds ? parseInt(params.rounds as string) : ROUND_OPTIONS[0];
   const selectedLanguage = params.language as string || 'English';
 
   // Calculate winning score (more than half of total rounds)
   const winningScore = Math.ceil(totalRounds / 2);
 
   // Get active teams (teams with players)
-  const activeTeams = useCallback(() => {
+  const activeTeams = useMemo(() => {
     const teams = new Set<TeamColor>();
-    players.forEach(player => {
-      if (player.team) teams.add(player.team);
-    });
+    players.forEach(player => teams.add(getPlayerTeam(player)));
     return Array.from(teams);
   }, [players]);
 
@@ -85,11 +97,11 @@ export default function GameScreen() {
   const getNewWords = useCallback(() => {
     // Use the appropriate word list based on selected language
     const wordList = selectedLanguage === 'Maltese' ? malteseWords : englishWords;
-    
+
     const randomWords = [];
     const usedIndices = new Set();
-    
-    const numWordsToPick = Math.min(5, wordList.length);
+
+    const numWordsToPick = Math.min(WORDS_PER_ROUND, wordList.length);
 
     while (randomWords.length < numWordsToPick) {
       const randomIndex = Math.floor(Math.random() * wordList.length);
@@ -102,23 +114,26 @@ export default function GameScreen() {
         });
       }
     }
-    
+
     return randomWords;
   }, [selectedLanguage]);
 
-  // Initialize game
+  // Reset for a new turn. Keyed on turnNumber (not player index) so it
+  // also fires when the same player is up again, e.g. with one player per team.
   useEffect(() => {
     setWords(getNewWords());
-    setTimeLeft(30);
-  }, [currentPlayerIndex, getNewWords]);
+    setTimeLeft(DEFAULT_TIMER_SECONDS);
+    setIsSuccess(false);
+    setTurnPhase('ready');
+  }, [turnNumber, getNewWords]);
 
-  // Timer countdown
+  // Timer countdown — only runs while a turn is actively being played
   useEffect(() => {
-    if (gameOver) return; // Don't run timer if game is over
+    if (turnPhase !== 'playing' || gameOver) return;
 
     if (timeLeft <= 0) {
       setIsSuccess(false);
-      setShowModal(true);
+      setTurnPhase('result');
       return;
     }
 
@@ -127,10 +142,16 @@ export default function GameScreen() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, gameOver]);
+  }, [timeLeft, turnPhase, gameOver]);
+
+  const startTurn = () => {
+    setTurnPhase('playing');
+  };
 
   // Handle word check
   const toggleWord = (id: number) => {
+    if (turnPhase !== 'playing') return;
+
     const newWords = words.map((word) =>
       word.id === id ? { ...word, checked: !word.checked } : word
     );
@@ -139,36 +160,65 @@ export default function GameScreen() {
     // Check if all words are checked
     if (newWords.every((word) => word.checked)) {
       setIsSuccess(true);
-      setShowModal(true);
+      setTurnPhase('result');
     }
   };
 
-  // Handle next round
-  const handleNext = () => {
-    if (isSuccess) {
-      const playerTeam = currentPlayer.team || (currentPlayer.isRedTeam ? 'red' : 'blue');
-      const newScores = { ...teamScores };
-      newScores[playerTeam] = teamScores[playerTeam] + 1;
-      setTeamScores(newScores);
+  const guessedCount = words.filter((w) => w.checked).length;
 
-      // Check if a team has won after updating scores
-      const teams = activeTeams();
-      for (const team of teams) {
-        if (newScores[team] >= winningScore) {
-          setWinningTeam(team);
-          setGameOver(true);
-          setShowModal(false); // Hide the round result modal
-          return; // Don't proceed to next player
-        }
-      }
+  // Work out what pressing "Next" will do, so the result modal can
+  // say who is up next (or that the game is about to end).
+  const turnOutcome = useMemo(() => {
+    if (!currentPlayer) {
+      return { newScores: teamScores, winner: null as TeamColor | null, gameEnds: false, nextIndex: 0, nextRound: currentRound };
     }
-    
-    const nextPlayerIndex = (currentPlayerIndex + 1) % players.length;
-    if (nextPlayerIndex === 0) { // A full round of players has completed
-      setCurrentRound(prevRound => prevRound + 1);
+
+    const newScores = { ...teamScores };
+    if (isSuccess) {
+      const team = getPlayerTeam(currentPlayer);
+      newScores[team] = teamScores[team] + 1;
     }
-    setCurrentPlayerIndex(nextPlayerIndex);
-    setShowModal(false);
+
+    // Early win: someone reached the winning score
+    const earlyWinner = activeTeams.find((team) => newScores[team] >= winningScore) ?? null;
+
+    const nextIndex = (currentPlayerIndex + 1) % players.length;
+    const roundComplete = nextIndex === 0;
+    const nextRound = roundComplete ? currentRound + 1 : currentRound;
+    const outOfRounds = roundComplete && currentRound >= totalRounds;
+
+    let winner: TeamColor | null = earlyWinner;
+    if (!winner && outOfRounds) {
+      // Highest score wins; equal top scores is a draw
+      const top = Math.max(...activeTeams.map((t) => newScores[t]));
+      const leaders = activeTeams.filter((t) => newScores[t] === top);
+      winner = leaders.length === 1 ? leaders[0] : null;
+    }
+
+    return {
+      newScores,
+      winner,
+      gameEnds: Boolean(earlyWinner) || outOfRounds,
+      nextIndex,
+      nextRound,
+    };
+  }, [currentPlayer, teamScores, isSuccess, activeTeams, winningScore, currentPlayerIndex, players.length, currentRound, totalRounds]);
+
+  const nextPlayer = turnOutcome.gameEnds ? null : players[turnOutcome.nextIndex];
+
+  // Handle next turn
+  const handleNext = () => {
+    setTeamScores(turnOutcome.newScores);
+
+    if (turnOutcome.gameEnds) {
+      setWinningTeam(turnOutcome.winner);
+      setGameOver(true);
+      return;
+    }
+
+    setCurrentRound(turnOutcome.nextRound);
+    setCurrentPlayerIndex(turnOutcome.nextIndex);
+    setTurnNumber((n) => n + 1);
   };
 
   // Return to setup screen
@@ -186,6 +236,8 @@ export default function GameScreen() {
     );
   }
 
+  const currentTeam = getPlayerTeam(currentPlayer);
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <View style={[styles.container, { paddingTop: insets.top + 10 }]}>
@@ -193,8 +245,8 @@ export default function GameScreen() {
         <BackButton onPress={() => router.back()} />
 
         {/* Score Display */}
-        <ScoreDisplay teamScores={teamScores} activeTeams={activeTeams()} />
-        
+        <ScoreDisplay teamScores={teamScores} activeTeams={activeTeams} />
+
         {/* Round Indicator */}
         <RoundInfoDisplay currentRound={currentRound} totalRounds={totalRounds} />
 
@@ -203,21 +255,51 @@ export default function GameScreen() {
           {/* Player turn indicator */}
           <PlayerTurnIndicator
             playerName={currentPlayer.name}
-            team={currentPlayer.team || (currentPlayer.isRedTeam ? 'red' : 'blue')}
+            team={currentTeam}
           />
-          
+
           {/* Timer section */}
           <GameTimer timeLeft={timeLeft} />
         </View>
 
-        {/* Words container */}
-        <WordList words={words} onToggleWord={toggleWord} />
+        {/* Instruction hint */}
+        <Text style={styles.hint}>
+          Tap a word when your team guesses it · {guessedCount} / {words.length}
+        </Text>
+
+        {/* Words container — hidden until the turn starts so nobody can peek */}
+        {turnPhase === 'ready' ? (
+          <View style={styles.wordsPlaceholder} />
+        ) : (
+          <WordList words={words} onToggleWord={toggleWord} />
+        )}
+
+        {/* Pass-the-phone screen, shown before the timer starts */}
+        <TurnReadyModal
+          visible={turnPhase === 'ready' && !gameOver}
+          playerName={currentPlayer.name}
+          team={currentTeam}
+          currentRound={currentRound}
+          totalRounds={totalRounds}
+          teamScores={teamScores}
+          activeTeams={activeTeams}
+          isFirstTurn={turnNumber === 0}
+          onStart={startTurn}
+        />
 
         {/* Results modal */}
-        <ResultModal 
-          visible={showModal} 
-          isSuccess={isSuccess} 
-          onNext={handleNext} 
+        <ResultModal
+          visible={turnPhase === 'result' && !gameOver}
+          isSuccess={isSuccess}
+          playerName={currentPlayer.name}
+          team={currentTeam}
+          guessedCount={guessedCount}
+          totalWords={words.length}
+          teamScores={turnOutcome.newScores}
+          activeTeams={activeTeams}
+          nextPlayerName={nextPlayer ? nextPlayer.name : null}
+          nextPlayerTeam={nextPlayer ? getPlayerTeam(nextPlayer) : null}
+          onNext={handleNext}
         />
 
         {/* Game Over modal */}
@@ -225,7 +307,7 @@ export default function GameScreen() {
           visible={gameOver}
           winningTeam={winningTeam}
           teamScores={teamScores}
-          activeTeams={activeTeams()}
+          activeTeams={activeTeams}
           onReturn={returnToSetup}
         />
       </View>
@@ -254,7 +336,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'stretch',
     width: '100%',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
     minHeight: 90,
   },
-}); 
+  wordsPlaceholder: {
+    flex: 1,
+  },
+  hint: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+    textAlign: 'center',
+    marginBottom: spacing.xs,
+  },
+});

@@ -24,11 +24,10 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
     return team.charAt(0).toUpperCase() + team.slice(1);
   };
 
-  const getScoreDisplay = () => {
-    return activeTeams
-      .map(team => `${getTeamName(team)} ${teamScores[team]}`)
-      .join(' - ');
-  };
+  const title = winningTeam
+    ? `${getTeamEmoji(winningTeam)} ${getTeamName(winningTeam)} Team Wins! ${getTeamEmoji(winningTeam)}`
+    : "🤝 It's a draw!";
+
   return (
     <Modal
       transparent={true}
@@ -36,19 +35,22 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
       animationType="fade"
     >
       <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>
-            {winningTeam && `${getTeamEmoji(winningTeam)} ${getTeamName(winningTeam)} Team Wins! ${getTeamEmoji(winningTeam)}`}
-          </Text>
-          <Text style={styles.modalMessage}>
-            Final Score: {getScoreDisplay()}
-          </Text>
+        <View style={[styles.modalContent, winningTeam ? { borderColor: colors.team[winningTeam] } : null]}>
+          <Text style={styles.modalTitle}>{title}</Text>
+          <Text style={styles.scoreLabel}>Final score</Text>
+          <View style={styles.scoreRow}>
+            {activeTeams.map((team) => (
+              <Text key={team} style={[styles.scoreText, { color: colors.team[team] }]}>
+                {getTeamName(team)} {teamScores[team]}
+              </Text>
+            ))}
+          </View>
           <TouchableOpacity
             style={styles.homeButton}
             onPress={onReturn}
           >
             <Text style={styles.buttonText}>
-              Return to Setup
+              Play Again
             </Text>
           </TouchableOpacity>
         </View>
@@ -62,14 +64,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    padding: spacing.lg,
   },
   modalContent: {
     backgroundColor: colors.background.primary,
     padding: spacing.xl,
     borderRadius: borderRadius.lg,
     alignItems: 'center',
-    width: '83%',
+    width: '100%',
+    maxWidth: 420,
     borderWidth: 2,
     borderColor: colors.feedback.info,
   },
@@ -80,11 +84,23 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: colors.text.primary,
   },
-  modalMessage: {
-    textAlign: 'center',
-    color: colors.text.primary,
-    marginBottom: spacing.lg,
-    fontSize: fontSize.md,
+  scoreLabel: {
+    fontSize: fontSize.xs,
+    color: colors.text.secondary,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: spacing.xs,
+  },
+  scoreRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  scoreText: {
+    fontSize: fontSize.xxl,
+    fontWeight: 'bold',
   },
   homeButton: {
     backgroundColor: colors.feedback.success,
@@ -99,4 +115,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
-}); 
+});
