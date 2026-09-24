@@ -89,7 +89,36 @@ into the file header.
 
 ## Provenance
 
-These lists are original work written for this app. They are deliberately not
-copied from any published word game: a curated deck from a commercial title is
-protectable as a compilation, and shipping a copy of one would put an App Store
-release at risk.
+The top-level language files (`english.ts`, `dutch.ts`, …) are original work
+written for this app.
+
+English and Dutch are extended with third-party decks in `sources/`, merged
+and de-duplicated in `index.ts`:
+
+| File                               | Source                              | License            | Terms |
+|------------------------------------|-------------------------------------|--------------------|-------|
+| `sources/english-30s-online.ts`    | joost/30-seconds-game-online        | none stated        | 465   |
+| `sources/english-game-words.ts`    | nick-aschenbach/game-words          | MIT                | 1,702 |
+| `sources/dutch-30s-online.ts`      | joost/30-seconds-game-online        | none stated        | 435   |
+| `sources/dutch-42seconds.ts`       | jellea/42seconds                    | none stated        | 118   |
+
+Full notices are in `THIRD_PARTY_NOTICES.md`. The two sources with no stated
+license were included at the app owner's direction. Get written permission
+from their authors before a store release, or remove them by deleting the file
+and its line in `index.ts`.
+
+**Never hand-edit `sources/`.** Every curation decision (categories kept,
+spelling fixes, the safety blocklist, US-only names dropped) lives in
+`scripts/build-imported-wordlists.mjs`. To change one, edit the script and
+regenerate:
+
+```bash
+git clone --depth 1 https://github.com/joost/30-seconds-game-online /tmp/decks/30-seconds-game-online
+git clone --depth 1 https://github.com/jellea/42seconds             /tmp/decks/42seconds
+git clone --depth 1 https://github.com/nick-aschenbach/game-words   /tmp/decks/game-words
+node scripts/build-imported-wordlists.mjs /tmp/decks
+npm run check:wordlists
+```
+
+The official 30 Seconds decks are not published online. If the licensor
+supplies them, bring them in with `npm run import:wordlist` (see above).

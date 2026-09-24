@@ -18,9 +18,16 @@ const MIN_WORDS = 100;
 /** Longer than this and the word card text starts wrapping badly. */
 const MAX_WORD_LENGTH = 28;
 
-const files = readdirSync(listDir)
-  .filter((f) => f.endsWith('.ts') && f !== 'index.ts')
-  .sort();
+// Top-level language files plus generated third-party lists in sources/.
+// Source files are named <language>-<source>.ts and count toward that
+// language's minimum; duplicates across files are merged at runtime.
+const sourceDir = join(listDir, 'sources');
+const files = [
+  ...readdirSync(listDir).filter((f) => f.endsWith('.ts') && f !== 'index.ts'),
+  ...readdirSync(sourceDir).filter((f) => f.endsWith('.ts')).map((f) => join('sources', f)),
+].sort();
+const languageOf = (file) => file.replace(/^sources\//, '').replace(/\.ts$/, '').split('-')[0];
+const totals = new Map();
 
 let failures = 0;
 const summary = [];
@@ -31,14 +38,16 @@ for (const file of files) {
 
   // Pull the quoted string literals out of the exported array, ignoring
   // anything inside a // comment (that's where romanisation lives).
-  const withoutComments = source.replace(/\/\/[^\n]*/g, '');
+  const withoutComments = source
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/[^\n]*/g, '');
   const words = [...withoutComments.matchAll(/'((?:[^'\\]|\\.)*)'/g)]
     .map((m) => m[1].replace(/\\'/g, "'"))
     .filter((w) => w.length > 0);
 
-  if (words.length < MIN_WORDS) {
-    problems.push(`only ${words.length} words (want at least ${MIN_WORDS})`);
-  }
+  const lang = languageOf(file);
+  if (!totals.has(lang)) totals.set(lang, new Set());
+  for (const w of words) totals.get(lang).add(w.toLocaleLowerCase());
 
   const seen = new Map();
   const duplicates = new Set();
@@ -72,8 +81,15 @@ for (const file of files) {
 }
 
 if (summary.length > 0) {
-  console.log(`Checked ${files.length} word lists:`);
+  console.log(`Checked ${files.length} word list files:`);
   console.log(summary.join('\n'));
+}
+
+console.log('\nPlayable words per language (after merging and de-duplication):');
+for (const [lang, set] of [...totals].sort()) {
+  const ok = set.size >= MIN_WORDS;
+  if (!ok) failures += 1;
+  console.log(`  ${ok ? ' ' : '!'} ${lang.padEnd(12)} ${String(set.size).padStart(5)}${ok ? '' : `  (want at least ${MIN_WORDS})`}`);
 }
 
 if (failures > 0) {

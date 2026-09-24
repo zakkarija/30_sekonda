@@ -309,8 +309,9 @@ export const WORDS_PER_ROUND = 5;
 **Location:** `src/assets/wordlists/` — one file per language plus `index.ts`.
 
 12 languages: English, Maltese, Chinese, Hindi, Spanish, French, Arabic,
-Bengali, Portuguese, Russian, Urdu, Dutch. Roughly 150–175 words each,
-about 1,900 in total.
+Bengali, Portuguese, Russian, Urdu, Dutch. Roughly 150–175 original words
+each. English (about 2,150 playable) and Dutch (about 700) are extended with
+third-party decks from `sources/`, merged and de-duplicated in `index.ts`.
 
 Screens never import a language file directly. They go through the registry:
 
@@ -338,9 +339,15 @@ categories, no grammar words, no duplicates, nothing distressing.
 (including case variants), lists under 100 words, stray whitespace, and
 entries too long for a word card. Run it after touching any list.
 
-**Provenance:** these lists are original. Do not paste in decks from published
-word games — a commercial game's curated word set is protectable as a
-compilation, which is a real risk for an App Store release.
+**Provenance:** top-level language files are original. `sources/` holds
+generated third-party decks; see `THIRD_PARTY_NOTICES.md` and the word list
+README for sources and licenses. Two of them (joost/30-seconds-game-online and
+jellea/42seconds) state no license and were included at the owner's direction;
+permission should be obtained before a store release.
+
+**Never hand-edit `sources/`.** Change the rules in
+`scripts/build-imported-wordlists.mjs` and regenerate. To import an official
+licensed deck from a CSV or TXT file, use `npm run import:wordlist`.
 
 ## Development Conventions
 

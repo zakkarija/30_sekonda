@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -34,6 +34,16 @@ type TurnPhase = 'ready' | 'playing' | 'result';
 
 const getPlayerTeam = (player: Player): TeamColor =>
   player.team || (player.isRedTeam ? 'red' : 'blue');
+
+/** 0..n-1 in random order (Fisher–Yates). */
+const shuffledIndices = (n: number): number[] => {
+  const a = Array.from({ length: n }, (_, i) => i);
+  for (let i = n - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
 
 export default function GameScreen() {
   const params = useLocalSearchParams();
@@ -93,28 +103,27 @@ export default function GameScreen() {
   }, [players]);
 
 
-  // Initialize words
-  const getNewWords = useCallback(() => {
+  // A shuffled pile of word indices, dealt from the top like a card deck, so
+  // no word repeats within a game. Only reshuffled if the pile runs out.
+  const deckRef = useRef<{ code: string; pile: number[] }>({ code: '', pile: [] });
+
+  const getNewWords = useCallback((): Word[] => {
     const wordList = language.words;
-
-    const randomWords = [];
-    const usedIndices = new Set();
-
+    const deck = deckRef.current;
     const numWordsToPick = Math.min(WORDS_PER_ROUND, wordList.length);
 
-    while (randomWords.length < numWordsToPick) {
-      const randomIndex = Math.floor(Math.random() * wordList.length);
-      if (!usedIndices.has(randomIndex)) {
-        usedIndices.add(randomIndex);
-        randomWords.push({
-          id: randomIndex,
-          text: wordList[randomIndex],
-          checked: false,
-        });
+    const dealt: Word[] = [];
+    while (dealt.length < numWordsToPick) {
+      if (deck.code !== language.code || deck.pile.length === 0) {
+        deck.code = language.code;
+        deck.pile = shuffledIndices(wordList.length);
       }
+      const index = deck.pile.pop()!;
+      // After a reshuffle, skip anything already on this turn's cards.
+      if (dealt.some((w) => w.id === index)) continue;
+      dealt.push({ id: index, text: wordList[index], checked: false });
     }
-
-    return randomWords;
+    return dealt;
   }, [language]);
 
   // Reset for a new turn. Keyed on turnNumber (not player index) so it

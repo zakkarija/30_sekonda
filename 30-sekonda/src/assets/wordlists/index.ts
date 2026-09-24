@@ -10,6 +10,33 @@ import { arabicWords } from './arabic';
 import { bengaliWords } from './bengali';
 import { russianWords } from './russian';
 import { urduWords } from './urdu';
+import { english30sOnlineWords } from './sources/english-30s-online';
+import { englishGameWords } from './sources/english-game-words';
+import { dutch30sOnlineWords } from './sources/dutch-30s-online';
+import { dutch42SecondsWords } from './sources/dutch-42seconds';
+
+/**
+ * Concatenate lists, keeping the first spelling of each term and dropping
+ * case-insensitive repeats (the same landmark often appears in several decks).
+ */
+const merge = (...lists: string[][]): string[] => {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const list of lists) {
+    for (const word of list) {
+      const key = word.toLocaleLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        out.push(word);
+      }
+    }
+  }
+  return out;
+};
+
+// Originals first so their spelling wins; see ./sources for provenance.
+const englishAll = merge(englishWords, english30sOnlineWords, englishGameWords);
+const dutchAll = merge(dutchWords, dutch30sOnlineWords, dutch42SecondsWords);
 
 /** ISO 639-1 code identifying a playable language. */
 export type LanguageCode =
@@ -46,7 +73,7 @@ export interface Language {
  * rules in ./README.md, then add one entry here. Nothing else needs changing.
  */
 export const LANGUAGES: Language[] = [
-  { code: 'en', name: 'English', nativeName: 'English', isRTL: false, words: englishWords },
+  { code: 'en', name: 'English', nativeName: 'English', isRTL: false, words: englishAll },
   { code: 'mt', name: 'Maltese', nativeName: 'Malti', isRTL: false, words: malteseWords },
   { code: 'zh', name: 'Chinese', nativeName: '中文', isRTL: false, words: chineseWords },
   { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', isRTL: false, words: hindiWords },
@@ -57,7 +84,7 @@ export const LANGUAGES: Language[] = [
   { code: 'pt', name: 'Portuguese', nativeName: 'Português', isRTL: false, words: portugueseWords },
   { code: 'ru', name: 'Russian', nativeName: 'Русский', isRTL: false, words: russianWords },
   { code: 'ur', name: 'Urdu', nativeName: 'اردو', isRTL: true, words: urduWords },
-  { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', isRTL: false, words: dutchWords },
+  { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', isRTL: false, words: dutchAll },
 ];
 
 export const DEFAULT_LANGUAGE: LanguageCode = 'en';
