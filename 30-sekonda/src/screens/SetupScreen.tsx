@@ -17,6 +17,7 @@ import { Player, TeamColor } from '../types';
 import { MIN_PLAYERS, MAX_PLAYERS, ROUND_OPTIONS } from '../constants/game';
 import { colors, fontSize, borderRadius, spacing } from '../styles/theme';
 import { TeamColorButton, HelpModal } from '../components';
+import { LANGUAGES, DEFAULT_LANGUAGE, LanguageCode } from '../assets/wordlists';
 
 interface PlayerInputRef {
   [key: number]: TextInput | null;
@@ -24,7 +25,7 @@ interface PlayerInputRef {
 
 export default function SetupScreen() {
   const insets = useSafeAreaInsets();
-  const [language, setLanguage] = useState('English');
+  const [language, setLanguage] = useState<LanguageCode>(DEFAULT_LANGUAGE);
   const [numPlayers, setNumPlayers] = useState(MIN_PLAYERS);
   const [numRounds, setNumRounds] = useState(ROUND_OPTIONS[0]);
   const teams: TeamColor[] = ['red', 'blue', 'green', 'yellow'];
@@ -155,20 +156,31 @@ export default function SetupScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Language</Text>
             <View style={styles.languageButtons}>
-              {['English', 'Maltese'].map((lang) => (
-                <TouchableOpacity
-                  key={lang}
-                  style={[
-                    styles.languageButton,
-                    language === lang ? styles.activeLanguageButton : null
-                  ]}
-                  onPress={() => setLanguage(lang)}
-                >
-                  <Text style={styles.languageButtonText}>
-                    {lang}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              {LANGUAGES.map((lang) => {
+                const selected = language === lang.code;
+                return (
+                  <TouchableOpacity
+                    key={lang.code}
+                    style={[
+                      styles.languageButton,
+                      selected ? styles.activeLanguageButton : null
+                    ]}
+                    onPress={() => setLanguage(lang.code)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    accessibilityLabel={lang.name}
+                  >
+                    <Text style={styles.languageButtonText} numberOfLines={1}>
+                      {lang.nativeName}
+                    </Text>
+                    {lang.nativeName !== lang.name && (
+                      <Text style={styles.languageButtonSubtext} numberOfLines={1}>
+                        {lang.name}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
 
@@ -348,21 +360,29 @@ const styles = StyleSheet.create({
   },
   languageButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
   },
   languageButton: {
     backgroundColor: colors.background.secondary,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     borderRadius: borderRadius.md,
+    minWidth: 96,
+    alignItems: 'center',
   },
   activeLanguageButton: {
     backgroundColor: colors.team.red,
   },
   languageButtonText: {
-    fontSize: fontSize.lg,
+    fontSize: fontSize.md,
     fontWeight: 'bold',
     color: colors.text.primary,
+  },
+  languageButtonSubtext: {
+    fontSize: fontSize.xs,
+    color: colors.text.secondary,
+    marginTop: 2,
   },
   playerCounter: {
     flexDirection: 'row',

@@ -8,9 +8,9 @@ This file provides comprehensive guidance to Claude Code (claude.ai/code) when w
 
 **Key Features:**
 - Multi-team support (Red, Blue, Green, Yellow teams)
-- Multilingual word lists (English, Maltese)
+- Word lists in 12 languages, each written natively rather than translated
 - Configurable game settings (3, 5, or 7 rounds)
-- Turn-based gameplay with automatic rotation
+- Turn-based gameplay with a pass-the-phone step between turns
 - Real-time scoring and round tracking
 
 ## Commands
@@ -26,9 +26,10 @@ cd 30-sekonda && npm run reset-project  # Reset project to starter state
 
 ### Code Quality & Testing
 ```bash
-cd 30-sekonda && npm run lint           # Run ESLint
-cd 30-sekonda && npx tsc --noEmit       # Type check without building
-cd 30-sekonda && npx expo doctor        # Check Expo configuration health
+cd 30-sekonda && npm run lint            # Run ESLint
+cd 30-sekonda && npx tsc --noEmit        # Type check without building
+cd 30-sekonda && npm run check:wordlists # Validate all word lists
+cd 30-sekonda && npx expo doctor         # Check Expo configuration health
 ```
 
 ### Build & Deployment (EAS)
@@ -64,9 +65,13 @@ eas submit --platform android           # Submit to Play Store
     │
     ├── /src/              # Application source code
     │   ├── /assets/       # Static assets
-    │   │   └── /wordlists/
-    │   │       ├── english.ts   # English word list
-    │   │       └── maltese.ts   # Maltese word list
+    │   │   └── /wordlists/       # One file per language + registry
+    │   │       ├── index.ts      # LANGUAGES registry, getLanguage()
+    │   │       ├── README.md     # Word-choice rules, how to add a language
+    │   │       ├── english.ts    maltese.ts    dutch.ts
+    │   │       ├── spanish.ts    french.ts     portuguese.ts
+    │   │       ├── chinese.ts    hindi.ts      bengali.ts
+    │   │       └── arabic.ts     russian.ts    urdu.ts
     │   │
     │   ├── /components/   # Reusable UI components
     │   │   ├── /buttons/
@@ -286,7 +291,7 @@ router.back();
 **Route Params:**
 - Players data: JSON stringified array
 - Rounds: string number ('3', '5', '7')
-- Language: string ('English', 'Maltese')
+- Language: ISO 639-1 code ('en', 'mt', 'zh', 'ar', …), resolved via `getLanguage()`
 
 ### Game Constants
 
@@ -301,18 +306,41 @@ export const WORDS_PER_ROUND = 5;
 
 ### Word Lists
 
-**Location:** `src/assets/wordlists/`
-**Structure:** TypeScript files exporting string arrays
-**Languages:** English, Maltese
-**Usage:** Random selection without replacement during each round
+**Location:** `src/assets/wordlists/` — one file per language plus `index.ts`.
+
+12 languages: English, Maltese, Chinese, Hindi, Spanish, French, Arabic,
+Bengali, Portuguese, Russian, Urdu, Dutch. Roughly 150–175 words each,
+about 1,900 in total.
+
+Screens never import a language file directly. They go through the registry:
 
 ```typescript
-// src/assets/wordlists/english.ts
-export const englishWords: string[] = ['apple', 'banana', ...];
+import { LANGUAGES, getLanguage, DEFAULT_LANGUAGE } from '../assets/wordlists';
 
-// src/assets/wordlists/maltese.ts
-export const malteseWords: string[] = ['tuffieħa', 'banana', ...];
+// SetupScreen renders the picker from LANGUAGES and stores a LanguageCode.
+// GameScreen resolves it, falling back to English for unknown codes.
+const language = getLanguage(params.language as string | undefined);
+language.words;  // string[]
+language.isRTL;  // true for Arabic and Urdu
 ```
+
+**Adding a language:** create `<language>.ts` exporting a `string[]`, then add
+one entry to `LANGUAGES`. Nothing else changes — the picker is generated from
+the registry.
+
+**The lists are localised, not translated.** Each is written from inside its
+own culture, because a word that lands in one does not land in another. See
+`src/assets/wordlists/README.md` for the full word-choice rules; the short
+version is: describable in seconds, evocative over generic, spread across
+categories, no grammar words, no duplicates, nothing distressing.
+
+**Validation:** `npm run check:wordlists` fails the build on duplicates
+(including case variants), lists under 100 words, stray whitespace, and
+entries too long for a word card. Run it after touching any list.
+
+**Provenance:** these lists are original. Do not paste in decks from published
+word games — a commercial game's curated word set is protectable as a
+compilation, which is a real risk for an App Store release.
 
 ## Development Conventions
 

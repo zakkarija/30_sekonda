@@ -6,8 +6,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { englishWords } from '../assets/wordlists/english';
-import { malteseWords } from '../assets/wordlists/maltese';
+import { getLanguage } from '../assets/wordlists';
 import { colors, spacing, fontSize } from '../styles/theme';
 import { DEFAULT_TIMER_SECONDS, WORDS_PER_ROUND, ROUND_OPTIONS } from '../constants/game';
 
@@ -80,7 +79,8 @@ export default function GameScreen() {
 
   // Parse the number of rounds (if passed)
   const totalRounds = params.rounds ? parseInt(params.rounds as string) : ROUND_OPTIONS[0];
-  const selectedLanguage = params.language as string || 'English';
+  // Unknown or missing codes fall back to English rather than crashing.
+  const language = getLanguage(params.language as string | undefined);
 
   // Calculate winning score (more than half of total rounds)
   const winningScore = Math.ceil(totalRounds / 2);
@@ -95,8 +95,7 @@ export default function GameScreen() {
 
   // Initialize words
   const getNewWords = useCallback(() => {
-    // Use the appropriate word list based on selected language
-    const wordList = selectedLanguage === 'Maltese' ? malteseWords : englishWords;
+    const wordList = language.words;
 
     const randomWords = [];
     const usedIndices = new Set();
@@ -116,7 +115,7 @@ export default function GameScreen() {
     }
 
     return randomWords;
-  }, [selectedLanguage]);
+  }, [language]);
 
   // Reset for a new turn. Keyed on turnNumber (not player index) so it
   // also fires when the same player is up again, e.g. with one player per team.
@@ -271,7 +270,7 @@ export default function GameScreen() {
         {turnPhase === 'ready' ? (
           <View style={styles.wordsPlaceholder} />
         ) : (
-          <WordList words={words} onToggleWord={toggleWord} />
+          <WordList words={words} onToggleWord={toggleWord} isRTL={language.isRTL} />
         )}
 
         {/* Pass-the-phone screen, shown before the timer starts */}
