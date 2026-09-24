@@ -82,6 +82,96 @@ const US_NICHE = new Set(
   ].map((s) => s.toLowerCase())
 );
 
+/**
+ * Too dull for the game: generic nouns, cooking verbs, moods, months, and
+ * everyday objects nobody enjoys describing. The bar is "would a table
+ * groan or laugh?", not "is it a real word?". Removed from every English
+ * source; see the word list README for the rules.
+ */
+const DULL = new Set(
+  [
+    // generic or collective nouns, and a slur
+    'Human', 'Bird', 'Flock', 'Herd', 'Cub', 'Doe', 'Ewe', 'Joey', 'Calf',
+    'Chick', 'Hen', 'Ram', 'Lamb', 'Kitten', 'Puppy', 'Housecat', 'Duckling',
+    'Gypsy', 'Meal', 'Food', 'Dinner', 'Breakfast', 'Snack', 'Produce',
+    'Dairy', 'Poultry', 'Meat', 'Beef', 'Pork', 'Low-fat', 'Appetizer',
+    // obscure animals and fish
+    'Mole', 'Crane', 'Partridge', 'Trout', 'Bass', 'Clam', 'Clams', 'Lark',
+    'Groundhog', 'Finch', 'Flounder', 'Elk', 'Mallard', 'Gopher', 'Shrew',
+    'Mink', 'Gnu', 'Inchworm', 'Earthworm', 'Worm', 'Worms', 'Mule',
+    'Cougar', 'Coyote', 'Jackalope', 'Barracuda', 'Weasel', 'Bluebird',
+    'Fly', 'Rat', 'Ox', 'Hare', 'Toad', 'Robin', 'Raven', 'Crow', 'Moth',
+    // cooking verbs and kitchen tools
+    'Broil', 'Dredge', 'Simmer', 'Poach', 'Blanch', 'Melt', 'Freeze', 'Bake',
+    'Zest', 'Grill', 'Deep-fry', 'Marinade', 'Sifter', 'Colander', 'Whisk',
+    'Spatula', 'Fork', 'Spoon', 'Napkin', 'Wok', 'Blender', 'Toaster',
+    // plain staples and obscure produce
+    'Salt', 'Flour', 'Rice', 'Corn', 'Barley', 'Cornmeal', 'Grits', 'Broth',
+    'Egg', 'Milk', 'Bread', 'Toast', 'Rolls', 'Soup', 'Jam', 'Jelly',
+    'Pea', 'Yam', 'Okra', 'Kale', 'Leek', 'Beet', 'Turnip', 'Parsnip',
+    'Radish', 'Celery', 'Lettuce', 'Cabbage', 'Squash', 'Gourd', 'Lentils',
+    'Soybean', 'Chickpea', 'Venison', 'Liver', 'Kumquat', 'Honeydew',
+    'Date', 'Fig', 'Raisin', 'Plum', 'Pear', 'Apricot', 'Tangerine',
+    'Clementine', 'Cantaloupe', 'Nutmeg', 'Basil', 'Cinnamon', 'Mustard',
+    'Horseradish', 'Croutons', 'Crackers', 'Flatbread', 'Pita', 'Granola',
+    'Oatmeal', 'Cereal', 'Candy', 'Sweets', 'Cookies', 'Pancakes',
+    'Waffles', 'Noodles', 'Snickerdoodle', 'Kool-aid', 'Twinkies',
+    'Jell-o', 'Corndog', 'Gumdrops', 'Wassail', 'Garlic', 'Carrot',
+    'Cherry', 'Salad', 'Tomato', 'Onion', 'Potato', 'Cucumber',
+    // US states, places and months
+    'Oregon', 'Delaware', 'Maine', 'Sacramento', 'Arizona', 'Colorado',
+    'Guam', 'Texas', 'California', 'Boston', 'Orlando', 'Yellowstone',
+    'Condo', 'January', 'April', 'June', 'July', 'December',
+    // abstract or mood words
+    'Summer', 'Autumn', 'Fall', 'Relax', 'Scenery', 'Stroll', 'Packing',
+    'Customs', 'Layover', 'Party', 'Parties', 'Music', 'Speech',
+    'Celebration', 'Traditions', 'Wishes', 'Resolutions', 'Toasts',
+    'Horror', 'Eerie', 'Spooky', 'Spooks', 'Creepy', 'Scary', 'Afraid',
+    'Frightened', 'Dark', 'Black', 'Green', 'Nighttime', 'Midnight',
+    'Boo', 'Spells', 'Igor', 'Chains', 'Mess', 'Stain', 'Leak', 'Mold',
+    'Crumb', 'Bedtime', 'Homework', 'Dance/dancing', 'Fence-sitter',
+    // flat household objects
+    'Floor', 'Ceiling', 'Door', 'Window', 'Table', 'Chair', 'Bed', 'Box',
+    'Bag', 'Glass', 'Jar', 'Block', 'Handle', 'Paper', 'Tape', 'Ink',
+    'Thread', 'Wick', 'Lace', 'Sash', 'Plastic', 'Weed', 'Picture',
+    'Books', 'Book', 'Shoe', 'Shoes', 'Boot', 'Shirt', 'Pants', 'Coat',
+    'Dress', 'Skirt', 'Vest', 'Socks', 'Towel', 'Tissue', 'Key', 'Mail',
+    'Stamp', 'Stamps', 'Penny', 'Quarter', 'Dollar', 'Cash', 'Money',
+    'Coin', 'Paint', 'Ribbon', 'Ice', 'Telephone', 'Television', 'TV',
+    'Computer', 'CD', 'IPod', 'Windex', 'Yardstick', 'Loveseat',
+    'Banister', 'Baseboards', 'Stationery', 'Markers', 'Crayons', 'Eraser',
+    'Pencil', 'Paperclip', 'Stapler', 'Bench', 'Stairs', 'Driveway',
+    'Doorway', 'Garage', 'Kitchen', 'Bedroom', 'Bathroom', 'Pantry',
+    'Silverware', 'Magnets', 'Bottle', 'Basket', 'Bucket', 'Sponge',
+    'Speakers', 'Wheel', 'Brother', 'Garbage', 'Mirror', 'Printer',
+    'Keyboard', 'Microwave', 'Refrigerator', 'Calculator', 'Agenda',
+    'Diary', 'Iron', 'Fan', 'Brick', 'Safe', 'Canvas', 'Helmet',
+    // plain nature words from the joost deck and the spring list
+    'Tree', 'Trees', 'Sun', 'Rain', 'Snow', 'Mud', 'Dew', 'Pollen',
+    'Flower', 'Flowers', 'Seeds', 'Rose', 'Shell', 'Lake', 'River',
+    'Island', 'Park', 'Star', 'Lights', 'Bells', 'Stable', 'Angel',
+    'Toys', 'Gifts', 'Decorations', 'Feast', 'Concerts',
+    // plain animals and vehicles from the joost deck
+    'Cow', 'Duck', 'Sheep', 'Ant', 'Bat', 'Seal', 'Snail', 'Turtle',
+    'Farm', 'Bus', 'Intersection', 'Slide', 'Courier', 'Whistleblower',
+    'Laptop stand', 'Stork', 'Manger', 'Shepherds', 'Costume',
+    // plain produce and baking; iconic foods (avocado, pineapple,
+    // watermelon, coconut, banana, chili pepper, pumpkin) are kept
+    'Lemon', 'Lime', 'Olive', 'Peach', 'Grape', 'Grapefruit', 'Papaya',
+    'Kiwi', 'Pomegranate', 'Cranberry', 'Blueberry', 'Blackberry',
+    'Raspberry', 'Pecan', 'Almond', 'Cashew', 'Walnuts', 'Peanut',
+    'Pistachio', 'Ginger', 'Curry', 'Caramel', 'Custard', 'Pudding',
+    'Cupcakes', 'Muffin', 'Scone', 'Biscuit', 'Bagel', 'Cookie', 'Cake',
+    'Tofu', 'Ham', 'Tuna', 'Salmon', 'Sardines', 'Asparagus', 'Broccoli',
+    'Cauliflower', 'Spinach', 'Zucchini', 'Eggplant', 'Artichoke',
+    'Mushroom', 'Bok choy', 'Baking soda', 'Baking powder', 'Muffin tin',
+    'Soup de jour', 'Chestnut', 'Chestnuts', 'Tangerines', 'Soda',
+    'Yogurt', 'Cheese', 'Mozzarella cheese', 'Black beans', 'Pinto beans',
+    'Green beans', 'Brown sugar', 'Sour cream', 'Cream cheese', 'Butter',
+    'Pepper', 'Sugar', 'Vinegar', 'Balsamic vinegar', 'Olive oil',
+  ].map((s) => s.toLowerCase())
+);
+
 /** Spelling fixes, applied before filtering and de-duplication. */
 const FIX = new Map(
   Object.entries({
@@ -121,10 +211,10 @@ const capitalise = (s) => (/^[a-z]/.test(s) && !/^the /.test(s) ? s[0].toUpperCa
 const theCase = (s) => s.replace(/^the /, 'The ');
 
 /** Normalise, filter and de-duplicate one source's terms. */
-const curate = (terms, { extraBlock } = {}) => {
+const curate = (terms, { extraBlock, dull } = {}) => {
   const seen = new Set();
   const kept = [];
-  const dropped = { blocked: 0, niche: 0, long: 0, dup: 0 };
+  const dropped = { blocked: 0, niche: 0, dull: 0, long: 0, dup: 0 };
   for (let t of terms) {
     t = String(t).trim().replace(/\s+/g, ' ');
     if (!t) continue;
@@ -133,6 +223,7 @@ const curate = (terms, { extraBlock } = {}) => {
     const key = t.toLowerCase();
     if (BLOCK.has(key) || extraBlock?.has(key)) { dropped.blocked++; continue; }
     if (US_NICHE.has(key)) { dropped.niche++; continue; }
+    if (dull?.has(key)) { dropped.dull++; continue; }
     if (t.length > MAX_LEN) { dropped.long++; continue; }
     if (seen.has(key)) { dropped.dup++; continue; }
     seen.add(key);
@@ -171,12 +262,12 @@ const joostNote = [
   'The repository states no license. Used at the app owner\'s direction;',
   'written permission from the author is recommended before release.',
 ];
-for (const [lang, exportName, file, extraBlock] of [
-  ['en', 'english30sOnlineWords', 'english-30s-online.ts', null],
-  ['nl', 'dutch30sOnlineWords', 'dutch-30s-online.ts', NOT_DUTCH],
+for (const [lang, exportName, file, extraBlock, dull] of [
+  ['en', 'english30sOnlineWords', 'english-30s-online.ts', null, DULL],
+  ['nl', 'dutch30sOnlineWords', 'dutch-30s-online.ts', NOT_DUTCH, null],
 ]) {
   const cards = JSON.parse(readFileSync(join(srcRoot, '30-seconds-game-online', `cards-${lang}.json`), 'utf8')).cards;
-  const { kept, dropped } = curate(cards.flat(), { extraBlock });
+  const { kept, dropped } = curate(cards.flat(), { extraBlock, dull });
   write(file, exportName, kept, headerFor({
     title: `${lang === 'en' ? 'English' : 'Dutch'} — 30 Seconds online deck`,
     repo: 'https://github.com/joost/30-seconds-game-online',
@@ -208,17 +299,19 @@ for (const [lang, exportName, file, extraBlock] of [
   const data = YAML.parse(readFileSync(join(srcRoot, 'game-words', 'assets', 'game_words', 'game_words.yaml'), 'utf8'));
   // Themed categories only: they give 30 Seconds-style people, places and
   // things. Skipped: the generic difficulty tiers (easy/medium/difficult/
-  // hard), which are mostly flat single words like "Last", "Snap", "Oval"
-  // and would otherwise make up most of every English deal; and US-specific
+  // hard), which are mostly flat single words like "Last", "Snap", "Oval";
+  // "household", which is almost all plain objects (Floor, Box, Stain);
+  // the spring and new year lists (Rain, Mud, Wishes); and US-specific
   // holidays (Independence Day, Thanksgiving, Valentine songs and sayings).
+  // What survives still passes through the DULL filter.
   const KEEP = [
-    ['catchphrase', ['animals', 'food', 'travel', 'people', 'household']],
+    ['catchphrase', ['animals', 'food', 'travel', 'people']],
     ['pictionary', ['idioms', 'characters', 'movies']],
     ['charades', ['actions']],
-    ['holidays', ['christmas', 'halloween', 'spring', 'newyears', 'christmassong']],
+    ['holidays', ['christmas', 'halloween', 'christmassong']],
   ];
   const terms = KEEP.flatMap(([group, cats]) => cats.flatMap((c) => data[group][c] ?? []));
-  const { kept, dropped } = curate(terms);
+  const { kept, dropped } = curate(terms, { dull: DULL });
   write('english-game-words.ts', 'englishGameWords', kept, headerFor({
     title: 'English — game-words party deck',
     repo: 'https://github.com/nick-aschenbach/game-words',
@@ -232,5 +325,5 @@ for (const [lang, exportName, file, extraBlock] of [
 }
 
 for (const [file, n, d] of report) {
-  console.log(`${file.padEnd(24)} kept ${String(n).padStart(5)}  dropped: ${d.blocked} blocked, ${d.niche} US-niche, ${d.long} too long, ${d.dup} duplicate`);
+  console.log(`${file.padEnd(24)} kept ${String(n).padStart(5)}  dropped: ${d.blocked} blocked, ${d.niche} US-niche, ${d.dull} dull, ${d.long} too long, ${d.dup} duplicate`);
 }

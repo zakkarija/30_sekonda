@@ -156,7 +156,7 @@ eas submit --platform android           # Submit to Play Store
 │  Setup Screen   │  Player registration, team selection
 │  (app/setup)    │  - Add 2-8 players
 └────────┬────────┘  - Assign to Red/Blue/Green/Yellow teams
-         │           - Select language (English/Maltese)
+         │           - Select language (12 options)
          │           - Choose rounds (3, 5, or 7)
          v
 ┌─────────────────┐
@@ -310,7 +310,7 @@ export const WORDS_PER_ROUND = 5;
 
 12 languages: English, Maltese, Chinese, Hindi, Spanish, French, Arabic,
 Bengali, Portuguese, Russian, Urdu, Dutch. Roughly 150–175 original words
-each. English (about 2,150 playable) and Dutch (about 700) are extended with
+each. English (about 1,550 playable) and Dutch (about 700) are extended with
 third-party decks from `sources/`, merged and de-duplicated in `index.ts`.
 
 Screens never import a language file directly. They go through the registry:

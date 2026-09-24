@@ -97,8 +97,8 @@ and de-duplicated in `index.ts`:
 
 | File                               | Source                              | License            | Terms |
 |------------------------------------|-------------------------------------|--------------------|-------|
-| `sources/english-30s-online.ts`    | joost/30-seconds-game-online        | none stated        | 465   |
-| `sources/english-game-words.ts`    | nick-aschenbach/game-words          | MIT                | 1,702 |
+| `sources/english-30s-online.ts`    | joost/30-seconds-game-online        | none stated        | 418   |
+| `sources/english-game-words.ts`    | nick-aschenbach/game-words          | MIT                | 1,112 |
 | `sources/dutch-30s-online.ts`      | joost/30-seconds-game-online        | none stated        | 435   |
 | `sources/dutch-42seconds.ts`       | jellea/42seconds                    | none stated        | 118   |
 
@@ -108,7 +108,8 @@ from their authors before a store release, or remove them by deleting the file
 and its line in `index.ts`.
 
 **Never hand-edit `sources/`.** Every curation decision (categories kept,
-spelling fixes, the safety blocklist, US-only names dropped) lives in
+spelling fixes, the safety blocklist, US-only names dropped, and the `DULL`
+list of generic nouns, cooking verbs, plain produce and moods) lives in
 `scripts/build-imported-wordlists.mjs`. To change one, edit the script and
 regenerate:
 

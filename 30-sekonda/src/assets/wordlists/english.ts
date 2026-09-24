@@ -54,11 +54,9 @@ export const englishWords: string[] = [
   'Ice cream',
   'Pizza slice',
   'Hot sauce',
-  'Cereal',
   'Leftovers',
   'Birthday cake',
   'Coffee run',
-  'Garlic',
 
   // Everyday objects
   'Umbrella',
@@ -70,11 +68,9 @@ export const englishWords: string[] = [
   'Chewing gum',
   'Remote control',
   'Vacuum cleaner',
-  'Toothbrush',
   'Piggy bank',
   'Mousetrap',
   'Wheelbarrow',
-  'Kettle',
   'Trampoline',
 
   // Actions & situations
@@ -114,14 +110,9 @@ export const englishWords: string[] = [
   'Volcano',
   'Desert island',
   'Haunted house',
-  'Rooftop',
   'Waterfall',
-  'Campsite',
-  'Museum',
-  'Launderette',
   'Rollercoaster',
   'Treehouse',
-  'Greenhouse',
   'Car wash',
 
   // Events & occasions
@@ -145,13 +136,11 @@ export const englishWords: string[] = [
   'Skateboard',
   'Bungee jump',
   'Snorkelling',
-  'Chess',
   'Karaoke',
   'Gardening',
   'Knitting',
   'Surfing',
   'Ice skating',
-  'Darts',
   'Hide and seek',
 
   // Tech & modern life
@@ -161,11 +150,9 @@ export const englishWords: string[] = [
   'Wi-Fi password',
   'Group chat',
   'Battery low',
-  'Spam email',
   'Video call',
   'Screenshot',
   'Autocorrect',
-  'Streaming',
   'Airplane mode',
   'QR code',
   'Smartwatch',
@@ -179,8 +166,6 @@ export const englishWords: string[] = [
   'Quicksand',
   'Full moon',
   'Shooting star',
-  'Puddle',
-  'Fog',
 
   // Bits of fun
   'Moustache',
