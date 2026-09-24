@@ -9,7 +9,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "check:wordlists": "node ./scripts/check-wordlists.mjs"
+    "check:wordlists": "node ./scripts/check-wordlists.mjs",
+    "import:wordlist": "node ./scripts/import-wordlist.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

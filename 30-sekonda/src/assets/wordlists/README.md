@@ -71,6 +71,22 @@ Arabic and Urdu are marked `isRTL` in the registry so word cards align right.
 Romanisation appears in `//` comments for maintainers and is never shown in the
 game.
 
+## Importing a licensed deck
+
+If a rights holder supplies a deck, import it instead of hand-editing:
+
+```bash
+cd 30-sekonda
+npm run import:wordlist -- path/to/deck.csv dutch \
+  --source "999 Games, 30 Seconds NL, licensed to Ziko Games"
+npm run check:wordlists
+```
+
+The input can be a `.txt` with one term per line, or a `.csv` with any number
+of terms per row, such as five per card side. The importer replaces the target
+file, drops duplicates and blank cells, and writes the source and import date
+into the file header.
+
 ## Provenance
 
 These lists are original work written for this app. They are deliberately not
