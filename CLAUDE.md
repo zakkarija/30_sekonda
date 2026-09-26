@@ -437,6 +437,21 @@ cd 30-sekonda && CI=1 BROWSER=none EXPO_OFFLINE=1 npx expo start --web --offline
 ```
 `CI=1` disables file watching, so restart the server after code changes. The web build can then be driven with Playwright (Chromium at `/opt/pw-browsers/chromium`) to walk the full game flow. Modals use a fade animation, so wait ~600ms before clicking buttons inside them.
 
+### Single-file web build (phone testing from a sandbox)
+When Expo Go cannot reach the dev server (a cloud sandbox blocks expo.dev and
+ngrok), the web build can be packed into one self-contained HTML file and
+opened on a phone:
+```bash
+cd 30-sekonda
+# temporarily set expo.web.output to "single" in app.json, then:
+npx expo export --platform web --output-dir /tmp/webdist
+node scripts/build-web-single-file.mjs /tmp/webdist /tmp/30-sekonda.html
+# restore app.json (output "static")
+```
+The script inlines the JS bundle and the Ionicons font as a data URI.
+`app/+not-found.tsx` renders the welcome screen, so the page works from any
+path it is served at.
+
 ### Recommended Testing Approach
 
 **Unit Tests** (Jest + React Native Testing Library):
