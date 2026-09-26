@@ -2,11 +2,14 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   View,
   Text,
-  StyleSheet
+  StyleSheet,
+  BackHandler
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { getLanguage } from '../assets/wordlists';
+import { feedback } from '../utils/feedback';
 import { colors, spacing, fontSize } from '../styles/theme';
 import { DEFAULT_TIMER_SECONDS, WORDS_PER_ROUND, ROUND_OPTIONS } from '../constants/game';
 
@@ -20,7 +23,8 @@ import {
   BackButton,
   ResultModal,
   GameOverModal,
-  TurnReadyModal
+  TurnReadyModal,
+  ConfirmModal
 } from '../components';
 import { Player, Word, TeamColor } from '../types';
 
@@ -31,6 +35,16 @@ import { Player, Word, TeamColor } from '../types';
  *  - result:  Turn summary. Timer is stopped.
  */
 type TurnPhase = 'ready' | 'playing' | 'result';
+
+/**
+ * Back to the setup screen that launched this game, which keeps the players,
+ * teams, language and rounds that were entered. Falls back to a fresh setup
+ * screen if the game was opened directly (e.g. a web link).
+ */
+const backToSetup = () => {
+  if (router.canGoBack()) router.back();
+  else router.replace('/setup');
+};
 
 const getPlayerTeam = (player: Player): TeamColor =>
   player.team || (player.isRedTeam ? 'red' : 'blue');
@@ -135,15 +149,28 @@ export default function GameScreen() {
     setTurnPhase('ready');
   }, [turnNumber, getNewWords]);
 
+  // Keep the screen on for the whole game: a phone dimming mid-turn, while
+  // being passed around a table, is the most annoying thing it can do.
+  useEffect(() => {
+    const tag = 'game';
+    activateKeepAwakeAsync(tag).catch(() => {});
+    return () => {
+      try { deactivateKeepAwake(tag); } catch { /* not supported here */ }
+    };
+  }, []);
+
   // Timer countdown — only runs while a turn is actively being played
   useEffect(() => {
     if (turnPhase !== 'playing' || gameOver) return;
 
     if (timeLeft <= 0) {
+      feedback.timeUp();
       setIsSuccess(false);
       setTurnPhase('result');
       return;
     }
+
+    if (timeLeft <= 5) feedback.countdownTick();
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => prev - 1);
@@ -153,6 +180,7 @@ export default function GameScreen() {
   }, [timeLeft, turnPhase, gameOver]);
 
   const startTurn = () => {
+    feedback.press();
     setTurnPhase('playing');
   };
 
@@ -167,10 +195,46 @@ export default function GameScreen() {
 
     // Check if all words are checked
     if (newWords.every((word) => word.checked)) {
+      feedback.success();
       setIsSuccess(true);
       setTurnPhase('result');
+    } else {
+      feedback.tap();
     }
   };
+
+  // Leaving mid-game throws away the scores, so ask first.
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const pauseRef = useRef<TurnPhase | null>(null);
+  const requestLeave = () => {
+    if (gameOver) {
+      backToSetup();
+      return;
+    }
+    // Freeze the clock while the question is on screen.
+    pauseRef.current = turnPhase;
+    if (turnPhase === 'playing') setTurnPhase('ready');
+    setConfirmLeave(true);
+  };
+  const cancelLeave = () => {
+    setConfirmLeave(false);
+    if (pauseRef.current) setTurnPhase(pauseRef.current);
+    pauseRef.current = null;
+  };
+  const leaveGame = () => {
+    setConfirmLeave(false);
+    backToSetup();
+  };
+
+  // Android back gesture while no modal is open (i.e. mid-turn). Modals
+  // handle it themselves through onRequestClose.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      requestLeave();
+      return true;
+    });
+    return () => sub.remove();
+  });
 
   const guessedCount = words.filter((w) => w.checked).length;
 
@@ -216,6 +280,7 @@ export default function GameScreen() {
 
   // Handle next turn
   const handleNext = () => {
+    feedback.press();
     setTeamScores(turnOutcome.newScores);
 
     if (turnOutcome.gameEnds) {
@@ -231,7 +296,8 @@ export default function GameScreen() {
 
   // Return to setup screen
   const returnToSetup = () => {
-    router.replace('/setup');
+    feedback.press();
+    backToSetup();
   };
 
   if (!currentPlayer) {
@@ -249,11 +315,14 @@ export default function GameScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <View style={[styles.container, { paddingTop: insets.top + 10 }]}>
-        {/* Custom Back Button */}
-        <BackButton onPress={() => router.back()} />
-
-        {/* Score Display */}
-        <ScoreDisplay teamScores={teamScores} activeTeams={activeTeams} />
+        {/* Header: back button and scores share a row so nothing overlaps */}
+        <View style={styles.header}>
+          <BackButton onPress={requestLeave} />
+          <View style={styles.headerScores}>
+            <ScoreDisplay teamScores={teamScores} activeTeams={activeTeams} />
+          </View>
+          <View style={styles.headerSpacer} />
+        </View>
 
         {/* Round Indicator */}
         <RoundInfoDisplay currentRound={currentRound} totalRounds={totalRounds} />
@@ -284,7 +353,7 @@ export default function GameScreen() {
 
         {/* Pass-the-phone screen, shown before the timer starts */}
         <TurnReadyModal
-          visible={turnPhase === 'ready' && !gameOver}
+          visible={turnPhase === 'ready' && !gameOver && !confirmLeave}
           playerName={currentPlayer.name}
           team={currentTeam}
           currentRound={currentRound}
@@ -293,11 +362,13 @@ export default function GameScreen() {
           activeTeams={activeTeams}
           isFirstTurn={turnNumber === 0}
           onStart={startTurn}
+          onRequestClose={requestLeave}
         />
 
         {/* Results modal */}
         <ResultModal
-          visible={turnPhase === 'result' && !gameOver}
+          visible={turnPhase === 'result' && !gameOver && !confirmLeave}
+          onRequestClose={requestLeave}
           isSuccess={isSuccess}
           playerName={currentPlayer.name}
           team={currentTeam}
@@ -318,6 +389,16 @@ export default function GameScreen() {
           activeTeams={activeTeams}
           onReturn={returnToSetup}
         />
+
+        <ConfirmModal
+          visible={confirmLeave}
+          title="Leave the game?"
+          message="The scores so far will be lost."
+          confirmLabel="Leave"
+          cancelLabel="Keep playing"
+          onConfirm={leaveGame}
+          onCancel={cancelLeave}
+        />
       </View>
     </SafeAreaView>
   );
@@ -332,6 +413,18 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: spacing.lg,
     paddingTop: 50,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  headerScores: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerSpacer: {
+    width: 40,
   },
   errorText: {
     color: colors.text.primary,

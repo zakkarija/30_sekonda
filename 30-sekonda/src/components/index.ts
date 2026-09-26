@@ -14,3 +14,4 @@ export { ResultModal } from './modals/ResultModal';
 export { GameOverModal } from './modals/GameOverModal';
 export { HelpModal } from './modals/HelpModal';
 export { TurnReadyModal } from './modals/TurnReadyModal';
+export { ConfirmModal } from './modals/ConfirmModal';

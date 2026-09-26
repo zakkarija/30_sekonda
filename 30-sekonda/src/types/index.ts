@@ -23,6 +23,8 @@ export interface TurnReadyModalProps {
   activeTeams: TeamColor[];
   isFirstTurn: boolean;
   onStart: () => void;
+  /** Android back gesture while the modal is open. */
+  onRequestClose?: () => void;
 }
 
 export interface GameModalProps {
@@ -37,6 +39,8 @@ export interface GameModalProps {
   nextPlayerName: string | null;
   nextPlayerTeam: TeamColor | null;
   onNext: () => void;
+  /** Android back gesture while the modal is open. */
+  onRequestClose?: () => void;
 }
 
 export interface GameOverModalProps {
@@ -45,4 +49,6 @@ export interface GameOverModalProps {
   teamScores: Record<TeamColor, number>;
   activeTeams: TeamColor[];
   onReturn: () => void;
+  /** Android back gesture while the modal is open. */
+  onRequestClose?: () => void;
 }

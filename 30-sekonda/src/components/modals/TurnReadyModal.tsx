@@ -21,11 +21,12 @@ export const TurnReadyModal: React.FC<TurnReadyModalProps> = ({
   activeTeams,
   isFirstTurn,
   onStart,
+  onRequestClose,
 }) => {
   const teamColor = colors.team[team];
 
   return (
-    <Modal transparent={true} visible={visible} animationType="fade">
+    <Modal transparent={true} visible={visible} animationType="fade" onRequestClose={onRequestClose}>
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContent, { borderColor: teamColor }]}>
           <Text style={styles.roundText}>

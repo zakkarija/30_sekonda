@@ -38,11 +38,21 @@ export default function SetupScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const playerInputRefs = useRef<PlayerInputRef>({});
 
-  // Validate if game can start
+  // Validate if game can start, and say why not when it can't.
+  const missingNames = players.filter(p => p.name.trim() === '').length;
+  const teamCount = new Set(players.map(p => p.team || 'red')).size;
+  const startBlocker =
+    missingNames > 0
+      ? missingNames === 1 ? 'Enter a name for every player' : `Enter names for ${missingNames} more players`
+      : teamCount < 2
+        ? 'Put players on at least two teams'
+        : null;
+
   useEffect(() => {
     const validPlayerNames = players.every(p => p.name.trim() !== '');
     const validPlayerCount = players.length >= MIN_PLAYERS;
-    setCanStart(validPlayerNames && validPlayerCount);
+    const validTeams = new Set(players.map(p => p.team || 'red')).size >= 2;
+    setCanStart(validPlayerNames && validPlayerCount && validTeams);
   }, [players]);
 
   const updatePlayer = (id: number, field: keyof Player, value: string | boolean | TeamColor) => {
@@ -275,6 +285,9 @@ export default function SetupScreen() {
               Start Game
             </Text>
           </TouchableOpacity>
+          {startBlocker && (
+            <Text style={styles.startHint}>{startBlocker}</Text>
+          )}
 
           {/* Help Modal */}
           <HelpModal
@@ -434,12 +447,15 @@ const styles = StyleSheet.create({
   },
   roundsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    gap: spacing.sm,
   },
   roundButton: {
+    // Equal thirds of the row, so "Best of 7" never runs off a narrow screen.
+    flex: 1,
+    alignItems: 'center',
     backgroundColor: colors.background.secondary,
     paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xs,
     borderRadius: borderRadius.md,
   },
   activeRoundButton: {
@@ -459,6 +475,12 @@ const styles = StyleSheet.create({
   },
   disabledStartButton: {
     backgroundColor: '#6C757D',
+  },
+  startHint: {
+    color: colors.feedback.warning,
+    fontSize: fontSize.sm,
+    textAlign: 'center',
+    marginTop: spacing.sm,
   },
   startButtonText: {
     fontSize: fontSize.xl,

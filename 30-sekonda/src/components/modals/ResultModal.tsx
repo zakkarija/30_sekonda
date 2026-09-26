@@ -22,12 +22,13 @@ export const ResultModal: React.FC<GameModalProps> = ({
   nextPlayerName,
   nextPlayerTeam,
   onNext,
+  onRequestClose,
 }) => {
   const teamColor = colors.team[team];
   const accent = isSuccess ? colors.feedback.success : colors.feedback.danger;
 
   return (
-    <Modal transparent={true} visible={visible} animationType="fade">
+    <Modal transparent={true} visible={visible} animationType="fade" onRequestClose={onRequestClose}>
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContent, { borderColor: accent }]}>
           <Text style={styles.modalTitle}>

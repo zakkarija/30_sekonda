@@ -8,7 +8,8 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   winningTeam,
   teamScores,
   activeTeams,
-  onReturn
+  onReturn,
+  onRequestClose,
 }) => {
   const getTeamEmoji = (team: TeamColor) => {
     switch (team) {
@@ -33,6 +34,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
       transparent={true}
       visible={visible}
       animationType="fade"
+      onRequestClose={onRequestClose ?? onReturn}
     >
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContent, winningTeam ? { borderColor: colors.team[winningTeam] } : null]}>
